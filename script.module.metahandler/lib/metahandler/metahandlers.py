@@ -1,4 +1,4 @@
-https://github.com/slyi/xbmc-metautils/edit/master/script.module.metahandler/lib/metahandler/metahandlers.py#'''
+'''
     These classes cache metadata from TheMovieDB and TVDB.
     It uses sqlite databases.
        
