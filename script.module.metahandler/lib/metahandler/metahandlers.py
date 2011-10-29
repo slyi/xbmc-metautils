@@ -1,4 +1,4 @@
-'''
+https://github.com/slyi/xbmc-metautils/edit/master/script.module.metahandler/lib/metahandler/metahandlers.py#'''
     These classes cache metadata from TheMovieDB and TVDB.
     It uses sqlite databases.
        
@@ -1408,4 +1408,72 @@ class MetaData:
             print 'Error attempting to insert into cache table: %s ' % e
             print 'Meta data:', meta
             pass         
-            
+
+
+    def cache_lookup_by_imdbs(self, type, imdb_ids=()):
+        '''
+        Lookup in SQL DB for video meta data by IMDB ID
+        
+        Args:
+            type (str): 'movie' or 'tvshow' or 'season'
+    		imdb_ids (tuple): IMDB IDs
+			
+        Returns:
+            LIST of matched imdbs or empty LIST if no match.
+        '''        
+        if type == self.type_movie:
+            table='movie_meta'
+            sql_select = "SELECT imdb_id FROM %s WHERE imdb_id in %s" % (table, str(imdb_ids))
+        elif type == self.type_tvshow:
+            table='tvshow_meta'
+            sql_select = "SELECT imdb_id FROM %s WHERE imdb_id in %s" % (table, str(imdb_ids)) 
+        elif type == 'season':
+            table='season_meta'
+            sql_select = "SELECT imdb_id FROM %s WHERE imdb_id in %s" % (table, str(imdb_ids))  
+        
+        print 'Lookup SQL Select: %s' % sql_select        
+        try:    
+            self.dbcur.execute(sql_select)
+            matchedrows = self.dbcur.fetchall()            
+        except Exception, e:
+            print 'Error selecting from cache db: %s' % e
+            return None
+
+        matchs=[l[0] for l in matchedrows]
+        if matchedrows:
+            print 'Found meta information by imdbs in cache table: ', str(matchs)
+        else:
+            print 'No match in local DB'
+        
+        return matchs
+
+    def cache_lookup_episodes_by_imdb(self, imdb_id,episodes=()):
+        '''
+        Lookup in SQL DB for video meta data by IMDB ID
+        
+        Args:
+            imdb_id (str): imdb id
+			episodes (tuple(int)): season & episode numbers
+        Returns:
+            LIST of matched episodes or empty LIST if no match.
+        '''        
+        
+        sql_select="SELECT season, episode FROM episode_meta where imdb_id = '%s' and season= 0 and episode= 0 " % imdb_id
+        for season,episode in episodes:
+            sql_select=" %s union SELECT season, episode FROM episode_meta where imdb_id = '%s' and season= %s and episode= %s " % (sql_select, imdb_id, season , episode)
+
+        print 'Lookup SQL Select: %s' % sql_select        
+        try:    
+            self.dbcur.execute(sql_select)
+            matchedrows = self.dbcur.fetchall()            
+        except Exception, e:
+            print 'Error selecting from cache db: %s' % e
+            return None
+
+        matchs=["S"+str(l[0])+"E"+str(l[1])  for l in matchedrows]
+        if matchedrows:
+            print 'Found meta information by imdbs in cache table: ', str(matchs)
+        else:
+            print 'No match in local DB'
+        
+        return matchs
